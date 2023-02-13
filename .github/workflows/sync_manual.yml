@@ -1,0 +1,42 @@
+name: Manually Sync Wiki Revisions
+
+on:
+  workflow_dispatch:
+    inputs:
+      pages:
+        description: 'Comma-separated list of wiki pages to save, or * for all.'
+        required: true
+        type: string
+        default: '*'
+      ignore:
+        description: 'Comma-separated list of wiki pages to ignore.'
+        required: false
+        type: string
+        default: ''
+      full:
+        description: 'Get full list of wiki pages to save, or just recently revised pages if false.'
+        required: true
+        type: boolean
+        default: false
+      mod:
+        description: 'Save mod-only pages as well, or just publicly visible pages if false.'
+        required: true
+        type: boolean
+        default: false
+      unlisted:
+        description: 'Save unlisted pages as well, if checking recent revisions. Not compatible with full list.'
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  call-reusable-sync:
+    name: Call Sync Workflow
+    uses: ./.github/workflows/reusable_sync.yml
+    with:
+      pages: ${{ inputs.pages }}
+      ignore: ${{ inputs.ignore }}
+      full: ${{ inputs.full }}
+      mod: ${{ inputs.mod }}
+      unlisted: ${{ inputs.unlisted }}
+    secrets: inherit

@@ -1,0 +1,82 @@
+name: Sync Wiki Revisions - Reusable
+
+on:
+  workflow_call:
+    secrets:
+      REDDIT_CLIENT_SECRET:
+        required: true
+      REDDIT_USER_PASSWORD:
+        required: true
+      REDDIT_TOTP_SECRET:
+        required: false
+    inputs:
+      pages:
+        description: 'Comma-separated list of wiki pages to save, or * for all.'
+        required: true
+        type: string
+        default: '*'
+      ignore:
+        description: 'Comma-separated list of wiki pages to ignore.'
+        required: true
+        type: string
+        default: ''
+      full:
+        description: 'Get full list of wiki pages to save, or just recently revised pages if false.'
+        required: true
+        type: boolean
+        default: false
+      mod:
+        description: 'Save mod-only pages as well, or just publicly visible pages if false.'
+        required: true
+        type: boolean
+        default: false
+      unlisted:
+        description: 'Save unlisted pages as well, if checking recent revisions. Not compatible with full list.'
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    name: Sync Revisions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # full history necessary for checking git log in script
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: '**/*requirements.txt'
+      - name: Install PRAW library
+        run: pip install -r requirements.txt
+      - name: Install TOTP library
+        env:
+          TOTP_SECRET: ${{ secrets.REDDIT_TOTP_SECRET }}
+        if: ${{ env.TOTP_SECRET != '' }}
+        run: pip install -r totp-requirements.txt
+      - name: Sync Revisions
+        run: |
+          export SUBREDDIT_NAME_TO_ACT_ON="${{ vars.SUBREDDIT_NAME_TO_ACT_ON }}"
+          export REDDIT_USER_AGENT="${{ vars.REDDIT_USER_AGENT }}"
+          export REDDIT_USERNAME="${{ vars.REDDIT_USERNAME }}"
+          export REDDIT_CLIENT_ID="${{ vars.REDDIT_CLIENT_ID }}"
+          export REDDIT_USER_PASSWORD="${{ secrets.REDDIT_USER_PASSWORD }}"
+          export REDDIT_CLIENT_SECRET="${{ secrets.REDDIT_CLIENT_SECRET }}"
+          export REDDIT_TOTP_SECRET="${{ secrets.REDDIT_TOTP_SECRET }}"
+
+          full=$([ ${{ inputs.full }} == "true" ] && echo "--full" || echo "--no-full")
+          mod=$([ ${{ inputs.mod }} == "true" ] && echo "--mod" || echo "--no-mod")
+          unlisted=$([ ${{ inputs.unlisted }} == "true" ] && echo "--unlisted" || echo "--no-unlisted")
+          ignore=$([ "${{ inputs.ignore }}" != "" ] && echo '--ignore ${{ inputs.ignore }}' || echo "")
+
+          python3 sync_git.py $full $mod $unlisted $ignore --pages "${{ inputs.pages }}"
+
+          # Avoid potential conflicts with other pushes to the main branch.
+          echo "Rebasing to avoid conflicts with other commits..."
+          git pull --rebase
+
+          echo "Pushing wiki changes to repo..."
+          git push

@@ -1,0 +1,17 @@
+name: Scheduled Sync Wiki Revisions
+
+on:
+  schedule:
+    - cron: '25 6 * * *'
+
+jobs:
+  call-reusable-sync:
+    name: Call Sync Workflow
+    uses: ./.github/workflows/reusable_sync.yml
+    with:
+      pages: ${{ vars.SCHEDULED_SYNC_PAGES }}
+      ignore: ${{ vars.SCHEDULED_SYNC_IGNORE }}
+      full: ${{ vars.SCHEDULED_SYNC_FULL == 'true' }}
+      mod: ${{ vars.SCHEDULED_SYNC_MOD == 'true' }}
+      unlisted: ${{ vars.SCHEDULED_SYNC_UNLISTED == 'true' }}
+    secrets: inherit
