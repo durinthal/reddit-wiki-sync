@@ -42,4 +42,4 @@ For customizing the scheduled workflow also include these:
 
 * REDDIT_CLIENT_SECRET: [OAuth Client Secret](https://github.com/reddit-archive/reddit/wiki/OAuth2) for authenticating app.
 * REDDIT_USER_PASSWORD: Password for authenticating reddit user.
-* REDDIT_TOTP_SECRET: ___(optional)___ Only add if the authenticating reddit user has two-factor authentication enabled. This is the 
+* REDDIT_TOTP_SECRET: ___(optional)___ Only add if the authenticating reddit user has two-factor authentication enabled. 
